@@ -1,4 +1,4 @@
-package healtchecks
+package healthchecks
 
 import "time"
 

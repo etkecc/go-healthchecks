@@ -1,4 +1,4 @@
-module gitlab.com/etke.cc/go/healthchecks
+module gitlab.com/etke.cc/go/healthchecks/v2
 
 go 1.18
 

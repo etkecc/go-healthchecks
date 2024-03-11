@@ -20,7 +20,7 @@ var (
 
 func newC(t *testing.T, baseURL string) *Client {
 	t.Helper()
-	c := New(testUUID)
+	c := New(WithCheckUUID(testUUID))
 	c.baseURL = baseURL
 	c.rid = testRID
 

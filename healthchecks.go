@@ -6,8 +6,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// DefaultAPI base url for checks
-const DefaultAPI = "https://hc-ping.com"
+const (
+	// DefaultAPI base url for checks
+	DefaultAPI = "https://hc-ping.com"
+	// DefaultUserAgent for the client
+	DefaultUserAgent = "Go-Healthchecks (lib; +https://gitlab.com/etke.cc/go/healthchecks)"
+)
 
 // ErrLog used to log errors occurred during an operation
 type ErrLog func(operation string, err error)

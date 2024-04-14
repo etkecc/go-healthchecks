@@ -19,6 +19,13 @@ func WithBaseURL(baseURL string) Option {
 	}
 }
 
+// WithUserAgent sets the user agent
+func WithUserAgent(userAgent string) Option {
+	return func(c *Client) {
+		c.userAgent = userAgent
+	}
+}
+
 // WithErrLog sets the error log
 func WithErrLog(errLog ErrLog) Option {
 	return func(c *Client) {

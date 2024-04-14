@@ -12,6 +12,9 @@ const DefaultAPI = "https://hc-ping.com"
 // ErrLog used to log errors occurred during an operation
 type ErrLog func(operation string, err error)
 
+// global client
+var global *Client
+
 // DefaultErrLog if you don't provide one yourself
 var DefaultErrLog = func(operation string, err error) {
 	fmt.Printf("healtchecks operation %q failed: %v\n", operation, err)
@@ -25,5 +28,18 @@ func New(options ...Option) *Client {
 	}
 	c.init(options...)
 
+	if global == nil {
+		global = c
+	}
+
 	return c
+}
+
+// Global healthchecks client
+func Global() *Client {
+	if global == nil {
+		global = New()
+	}
+
+	return global
 }

@@ -11,7 +11,10 @@ import (
 )
 
 // Client for healthchecks
+// if client initialized without any options, it will be disabled by default,
+// but you can override it by calling SetEnabled(true).
 type Client struct {
+	enabled bool
 	http    *http.Client
 	log     func(string, error)
 	baseURL string
@@ -23,21 +26,21 @@ type Client struct {
 
 // init client
 func (c *Client) init(options ...Option) {
+	c.enabled = true
+	c.log = DefaultErrLog
+	c.baseURL = DefaultAPI
+	c.http = &http.Client{Timeout: 10 * time.Second}
+	c.done = make(chan bool, 1)
+	c.uuid = ""
+
+	if len(options) == 0 {
+		c.enabled = false
+	}
+
 	for _, option := range options {
 		option(c)
 	}
-	if c.log == nil {
-		c.log = DefaultErrLog
-	}
-	if c.baseURL == "" {
-		c.baseURL = DefaultAPI
-	}
-	if c.http == nil {
-		c.http = &http.Client{Timeout: 10 * time.Second}
-	}
-	if c.done == nil {
-		c.done = make(chan bool, 1)
-	}
+
 	if c.uuid == "" {
 		randomUUID, _ := uuid.NewRandom()
 		c.uuid = randomUUID.String()
@@ -47,6 +50,10 @@ func (c *Client) init(options ...Option) {
 }
 
 func (c *Client) call(operation, endpoint string, body ...io.Reader) {
+	if !c.enabled {
+		return
+	}
+
 	var err error
 	var resp *http.Response
 	targetURL := fmt.Sprintf("%s/%s%s?rid=%s", c.baseURL, c.uuid, endpoint, c.rid)
@@ -74,6 +81,13 @@ func (c *Client) call(operation, endpoint string, body ...io.Reader) {
 		c.log(operation+":response", rerr)
 		return
 	}
+}
+
+// SetEnabled sets the enabled flag, ignoring the options
+// if client initialized without any options, it will be disabled by default,
+// but you can override it by calling SetEnabled(true).
+func (c *Client) SetEnabled(enabled bool) {
+	c.enabled = enabled
 }
 
 // Start signal means the job started

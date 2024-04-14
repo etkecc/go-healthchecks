@@ -2,6 +2,7 @@ package healthchecks
 
 import "net/http"
 
+// Option for healthchecks client
 type Option func(*Client)
 
 // WithHTTPClient sets the http client
@@ -36,6 +37,13 @@ func WithCheckUUID(uuid string) Option {
 func WithAutoProvision() Option {
 	return func(c *Client) {
 		c.create = true
+	}
+}
+
+// WithGlobal sets this client as the global client
+func WithGlobal() Option {
+	return func(c *Client) {
+		global = c
 	}
 }
 

@@ -7,7 +7,7 @@ This library provides a Golang client for interacting with [healthchecks.io](htt
 To use this library, simply import it into your Golang project:
 
 ```bash
-go get gitlab.com/etke.cc/go/healthchecks/v2
+go get github.com/etkecc/go-healthchecks/v2
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ go get gitlab.com/etke.cc/go/healthchecks/v2
 To start using the healthchecks.io client, you can initialize a new client with optional configuration using the `New` function:
 
 ```go
-import "gitlab.com/etke.cc/go/healthchecks/v2"
+import "github.com/etkecc/go-healthchecks/v2"
 
 func main() {
     // Initialize a new client with default options
@@ -122,11 +122,3 @@ client := healthchecks.New(
     // Add more options as needed
 )
 ```
-
-## Contributions
-
-Contributions to this library are welcome! If you find any issues or have suggestions for improvements, feel free to open an issue or submit a pull request on [GitLab](https://gitlab.com/etke.cc/go/healthchecks).
-
-## License
-
-This library is licensed under the GNU Lesser General Public License v3.0 (LGPL-3.0). See the LICENSE file for details.

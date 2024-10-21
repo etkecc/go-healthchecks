@@ -60,44 +60,46 @@ func (c *Client) call(operation, endpoint string, body ...io.Reader) {
 	}
 
 	c.wg.Add(1)
-	defer c.wg.Done()
+	go func() {
+		defer c.wg.Done()
 
-	targetURL := fmt.Sprintf("%s/%s%s?rid=%s", c.baseURL, c.uuid, endpoint, c.rid)
-	if c.create {
-		targetURL += "&create=1"
-	}
+		targetURL := fmt.Sprintf("%s/%s%s?rid=%s", c.baseURL, c.uuid, endpoint, c.rid)
+		if c.create {
+			targetURL += "&create=1"
+		}
 
-	var req *http.Request
-	var err error
-	if len(body) > 0 {
-		req, err = http.NewRequest(http.MethodPost, targetURL, body[0])
-	} else {
-		req, err = http.NewRequest(http.MethodHead, targetURL, http.NoBody)
-	}
-	if err != nil {
-		c.log(operation, err)
-		return
-	}
-	req.Header.Set("User-Agent", c.userAgent)
-	req.Header.Set("Content-Type", "text/plain; charset=utf-8")
+		var req *http.Request
+		var err error
+		if len(body) > 0 {
+			req, err = http.NewRequest(http.MethodPost, targetURL, body[0])
+		} else {
+			req, err = http.NewRequest(http.MethodHead, targetURL, http.NoBody)
+		}
+		if err != nil {
+			c.log(operation, err)
+			return
+		}
+		req.Header.Set("User-Agent", c.userAgent)
+		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 
-	resp, err := c.http.Do(req)
-	if err != nil {
-		c.log(operation, err)
-		return
-	}
-	defer resp.Body.Close()
+		resp, err := c.http.Do(req)
+		if err != nil {
+			c.log(operation, err)
+			return
+		}
+		defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		respb, rerr := io.ReadAll(resp.Body)
-		if rerr != nil {
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+			respb, rerr := io.ReadAll(resp.Body)
+			if rerr != nil {
+				c.log(operation+":response", rerr)
+				return
+			}
+			rerr = fmt.Errorf(string(respb))
 			c.log(operation+":response", rerr)
 			return
 		}
-		rerr = fmt.Errorf(string(respb))
-		c.log(operation+":response", rerr)
-		return
-	}
+	}()
 }
 
 // SetEnabled sets the enabled flag, ignoring the options
@@ -109,27 +111,27 @@ func (c *Client) SetEnabled(enabled bool) {
 
 // Start signal means the job started
 func (c *Client) Start(optionalBody ...io.Reader) {
-	go c.call("start", "/start", optionalBody...)
+	c.call("start", "/start", optionalBody...)
 }
 
 // Success signal means the job has completed successfully (or, a continuously running process is still running and healthy).
 func (c *Client) Success(optionalBody ...io.Reader) {
-	go c.call("success", "", optionalBody...)
+	c.call("success", "", optionalBody...)
 }
 
 // Fail signal means the job failed
 func (c *Client) Fail(optionalBody ...io.Reader) {
-	go c.call("fail", "/fail", optionalBody...)
+	c.call("fail", "/fail", optionalBody...)
 }
 
 // Log signal just adds an event to the job log, without changing job status
 func (c *Client) Log(optionalBody ...io.Reader) {
-	go c.call("log", "/log", optionalBody...)
+	c.call("log", "/log", optionalBody...)
 }
 
 // ExitStatus signal sends job's exit code (0-255)
 func (c *Client) ExitStatus(exitCode int, optionalBody ...io.Reader) {
-	go c.call("exit status", "/"+strconv.Itoa(exitCode), optionalBody...)
+	c.call("exit status", "/"+strconv.Itoa(exitCode), optionalBody...)
 }
 
 // Shutdown the client

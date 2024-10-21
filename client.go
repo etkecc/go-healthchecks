@@ -1,6 +1,7 @@
 package healthchecks
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -46,60 +47,63 @@ func (c *Client) init(options ...Option) {
 	}
 
 	if c.uuid == "" {
-		randomUUID, _ := uuid.NewRandom()
+		randomUUID, _ := uuid.NewRandom() //nolint:errcheck // ignore error
 		c.uuid = randomUUID.String()
 		c.create = true
 		c.log("uuid", fmt.Errorf("check UUID is not provided, using random %q with auto provision", c.uuid))
 	}
 }
 
-// call API
-func (c *Client) call(operation, endpoint string, body ...io.Reader) {
+// Call API
+func (c *Client) Call(operation, endpoint string, body ...io.Reader) {
 	if !c.enabled {
 		return
 	}
 
 	c.wg.Add(1)
-	go func() {
-		defer c.wg.Done()
+	go c.call(operation, endpoint, body...)
+}
 
-		targetURL := fmt.Sprintf("%s/%s%s?rid=%s", c.baseURL, c.uuid, endpoint, c.rid)
-		if c.create {
-			targetURL += "&create=1"
-		}
+// call API, extracted from c.Call to reduce cyclomatic complexity
+func (c *Client) call(operation, endpoint string, body ...io.Reader) {
+	defer c.wg.Done()
 
-		var req *http.Request
-		var err error
-		if len(body) > 0 {
-			req, err = http.NewRequest(http.MethodPost, targetURL, body[0])
-		} else {
-			req, err = http.NewRequest(http.MethodHead, targetURL, http.NoBody)
-		}
-		if err != nil {
-			c.log(operation, err)
-			return
-		}
-		req.Header.Set("User-Agent", c.userAgent)
-		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
+	targetURL := fmt.Sprintf("%s/%s%s?rid=%s", c.baseURL, c.uuid, endpoint, c.rid)
+	if c.create {
+		targetURL += "&create=1"
+	}
 
-		resp, err := c.http.Do(req)
-		if err != nil {
-			c.log(operation, err)
-			return
-		}
-		defer resp.Body.Close()
+	var req *http.Request
+	var err error
+	if len(body) > 0 {
+		req, err = http.NewRequest(http.MethodPost, targetURL, body[0])
+	} else {
+		req, err = http.NewRequest(http.MethodHead, targetURL, http.NoBody)
+	}
+	if err != nil {
+		c.log(operation, err)
+		return
+	}
+	req.Header.Set("User-Agent", c.userAgent)
+	req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 
-		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-			respb, rerr := io.ReadAll(resp.Body)
-			if rerr != nil {
-				c.log(operation+":response", rerr)
-				return
-			}
-			rerr = fmt.Errorf(string(respb))
+	resp, err := c.http.Do(req)
+	if err != nil {
+		c.log(operation, err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		respb, rerr := io.ReadAll(resp.Body)
+		if rerr != nil {
 			c.log(operation+":response", rerr)
 			return
 		}
-	}()
+		rerr = errors.New(string(respb))
+		c.log(operation+":response", rerr)
+		return
+	}
 }
 
 // SetEnabled sets the enabled flag, ignoring the options
@@ -111,27 +115,27 @@ func (c *Client) SetEnabled(enabled bool) {
 
 // Start signal means the job started
 func (c *Client) Start(optionalBody ...io.Reader) {
-	c.call("start", "/start", optionalBody...)
+	c.Call("start", "/start", optionalBody...)
 }
 
 // Success signal means the job has completed successfully (or, a continuously running process is still running and healthy).
 func (c *Client) Success(optionalBody ...io.Reader) {
-	c.call("success", "", optionalBody...)
+	c.Call("success", "", optionalBody...)
 }
 
 // Fail signal means the job failed
 func (c *Client) Fail(optionalBody ...io.Reader) {
-	c.call("fail", "/fail", optionalBody...)
+	c.Call("fail", "/fail", optionalBody...)
 }
 
 // Log signal just adds an event to the job log, without changing job status
 func (c *Client) Log(optionalBody ...io.Reader) {
-	c.call("log", "/log", optionalBody...)
+	c.Call("log", "/log", optionalBody...)
 }
 
 // ExitStatus signal sends job's exit code (0-255)
 func (c *Client) ExitStatus(exitCode int, optionalBody ...io.Reader) {
-	c.call("exit status", "/"+strconv.Itoa(exitCode), optionalBody...)
+	c.Call("exit status", "/"+strconv.Itoa(exitCode), optionalBody...)
 }
 
 // Shutdown the client

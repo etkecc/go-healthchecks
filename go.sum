@@ -1,2 +1,4 @@
+github.com/etkecc/go-kit v1.12.0 h1:jYZ3GK89O7KdTlJHCeWrh9e+ssSdZI8D5eyfEONJQ+A=
+github.com/etkecc/go-kit v1.12.0/go.mod h1:Mj5wxe1ntD+yxAxxozIb/F9ns4sLEeRTzHjFiNdNP9g=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
